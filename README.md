@@ -14,30 +14,31 @@ A simple Django project with a pluggable rule engine for order validation.
 
 ## Setup
 
-1. **Create virtual environment**:
+1. **Create and activate virtual environment**:
 ```bash
 python3 -m venv venv
+source venv/bin/activate
 ```
 
 2. **Install dependencies**:
 ```bash
-./venv/bin/pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 3. **Create and apply migrations**:
 ```bash
-./venv/bin/python manage.py makemigrations
-./venv/bin/python manage.py migrate
+python manage.py makemigrations
+python manage.py migrate
 ```
 
 4. **Seed the database** (creates 3 example orders):
 ```bash
-./venv/bin/python manage.py seed_orders
+python manage.py seed_orders
 ```
 
 5. **Run the server**:
 ```bash
-./venv/bin/python manage.py runserver
+python manage.py runserver
 ```
 
 ## Usage
