@@ -11,6 +11,7 @@ A simple Django project with a pluggable rule engine for order validation.
   - `min_items_2`: Items count must be >= 2
   - `divisible_by_5`: Total must be divisible by 5
 - **REST API**: Endpoint to check which rules pass for a given order
+- **Swagger Documentation**: Interactive API docs powered by drf-spectacular
 
 ## Setup
 
@@ -41,7 +42,15 @@ python manage.py seed_orders
 python manage.py runserver
 ```
 
+6. **Access Swagger Documentation** (optional):
+
+Open your browser and visit: http://localhost:8000/api/docs/
+
 ## Usage
+
+### Interactive API Documentation
+
+Visit http://localhost:8000/api/docs/ for the full Swagger UI where you can test the API interactively.
 
 ### API Endpoint
 

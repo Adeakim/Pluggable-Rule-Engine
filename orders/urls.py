@@ -1,7 +1,7 @@
 from django.urls import path
-from orders import views
+from orders.views import CheckRulesView
 
 urlpatterns = [
-    path('check/', views.check_rules, name='check_rules'),
+    path('check/', CheckRulesView.as_view(), name='check_rules'),
 ]
 

@@ -1,73 +1,61 @@
-from rest_framework.decorators import api_view
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from drf_spectacular.utils import extend_schema, OpenApiExample
 from orders.models import Order
 from orders.rule_engine import RuleRegistry
+from orders.serializers import RuleCheckRequestSerializer, RuleCheckResponseSerializer
 
 
-@api_view(['POST'])
-def check_rules(request):
-    """
-    Check which rules pass for a given order.
-    
-    Request body:
-    {
-        "order_id": 1,
-        "rules": ["min_total_100", "min_items_2"]
-    }
-    
-    Response:
-    {
-        "passed": true,
-        "details": {
-            "min_total_100": true,
-            "min_items_2": false
-        }
-    }
-    """
-    order_id = request.data.get('order_id')
-    rule_names = request.data.get('rules', [])
-
-    # Validate input
-    if not order_id:
-        return Response(
-            {"error": "order_id is required"},
-            status=status.HTTP_400_BAD_REQUEST
+@extend_schema(
+    request=RuleCheckRequestSerializer,
+    responses=RuleCheckResponseSerializer,
+    tags=['Rules'],
+    examples=[
+        OpenApiExample(
+            'Example',
+            value={'order_id': 1, 'rules': ['min_total_100', 'min_items_2']},
+            request_only=True
         )
+    ]
+)
+class CheckRulesView(APIView):
+    """Check order against business rules."""
 
-    if not rule_names:
-        return Response(
-            {"error": "rules list is required"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    def post(self, request):
+        """Check which rules pass for a given order."""
+        serializer = RuleCheckRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"error": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-    # Get the order
-    try:
-        order = Order.objects.get(id=order_id)
-    except Order.DoesNotExist:
-        return Response(
-            {"error": f"Order with id {order_id} not found"},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        order_id = serializer.validated_data['order_id']
+        rule_names = serializer.validated_data['rules']
 
-    # Check each rule
-    details = {}
-    for rule_name in rule_names:
-        rule_class = RuleRegistry.get_rule(rule_name)
-        if not rule_class:
-            details[rule_name] = None  # Rule not found
-        else:
-            rule_instance = rule_class()
-            details[rule_name] = rule_instance.check(order)
+        # Get the order
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            return Response(
+                {"error": f"Order with id {order_id} not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-    # Overall pass is True if all rules passed
-    all_passed = all(
-        result is True 
-        for result in details.values()
-    )
+        # Check each rule
+        details = {}
+        for rule_name in rule_names:
+            rule_class = RuleRegistry.get_rule(rule_name)
+            if not rule_class:
+                details[rule_name] = None
+            else:
+                rule_instance = rule_class()
+                details[rule_name] = rule_instance.check(order)
 
-    return Response({
-        "passed": all_passed,
-        "details": details
-    })
+        all_passed = all(result is True for result in details.values())
 
+        return Response({
+            "passed": all_passed,
+            "details": details
+        })
